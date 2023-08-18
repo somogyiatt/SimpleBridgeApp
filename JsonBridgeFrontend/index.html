@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Gateway Frontend</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            margin: 2rem;
+            padding: 1rem;
+            background-color: white;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .column {
+            width: 45%;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background-color: #e1e1e1;
+            border-radius: 5px;
+            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #error {
+            font-weight: bold;
+            text-align: center;
+            color: white;
+            background: #007bff;
+        }
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="column">
+        <h2>Sent JSON</h2>
+        <ul id="sentMessages"></ul>
+    </div>
+    <div class="column">
+        <h2>Received JSON</h2>
+        <ul id="receivedMessages"></ul>
+    </div>
+</div>
+<div class="container">
+    <div>
+        <label for="inputJson">Enter JSON:</label>
+        <textarea id="inputJson" rows="4" cols="50"></textarea>
+        <button id="sendButton">Send POST Request</button>
+    </div>
+</div>
+<div id="error"></div>
+
+<script>
+    const inputJson = document.getElementById('inputJson');
+    const errorDiv = document.getElementById('error');
+    const sendButton = document.getElementById('sendButton');
+    const sentMessagesList = document.getElementById('sentMessages');
+    const receivedMessagesList = document.getElementById('receivedMessages');
+    const ws = new WebSocket('ws://localhost:8000/ws/api/ui/');
+
+    sendButton.addEventListener('click', async () => {
+        const jsonToSend = inputJson.value || '{"default": "Default JSON"}';
+
+        const response = await fetch('http://localhost:8000/api/ui/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: jsonToSend,
+        });
+
+        if (response.ok) {
+            const sentMessageItem = document.createElement('li');
+            sentMessageItem.textContent = jsonToSend;
+            sentMessagesList.appendChild(sentMessageItem);
+            errorDiv.textContent = '';
+
+            console.log('POST request successful');
+        } else {
+            errorDiv.textContent = 'Incorrect Json format!';
+        }
+    });
+
+    ws.onopen = (event) => {
+        console.log('WebSocket connection opened:', event);
+    };
+
+    ws.onmessage = (event) => {
+        const receivedMessageItem = document.createElement('li');
+        receivedMessageItem.textContent = event.data;
+        receivedMessagesList.appendChild(receivedMessageItem);
+    };
+
+    ws.onclose = (event) => {
+        console.log('WebSocket connection closed:', event);
+    };
+</script>
+</body>
+</html>
